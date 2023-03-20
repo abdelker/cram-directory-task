@@ -93,18 +93,18 @@
 ;         ;;    (if ((eql (length ambiguous) 0))
 ;         ;;     (values (length sparql-result))
 ;         ;;     (expt 2 63))
-            
+           
             
 
-; (defun get-triplet (fact)
-;     (let ((match (split-sequence:SPLIT-SEQUENCE #\Space fact)))
-;        (let ((triples (roslisp:make-msg "knowledge_share_planner_msgs/Triple"
-;                      :from (car match)
-;                      :relation (second match)
-;                      :on (last match))))
+(defun get-triplet (fact)
+    (let ((match (split-sequence:SPLIT-SEQUENCE #\Space fact)))
+       (let ((triples (roslisp:make-msg "knowledge_sharing_planner_msgs/Triplet"
+                     :from (car match)
+                     :relation (second match)
+                     :on (last match))))
                     
-;          (princ (concatenate 'string "triplet :" triples))
-;          (values triples))))
+         (princ (concatenate 'string "triplet :" triples))
+         (values triples))))
 
 
 ; (defun update-cube-list ()
