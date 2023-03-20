@@ -91,9 +91,9 @@
                          :individual(svref (msg-slot-value match 'ONTOLOGENIUS-MSG:VALUES) 0)
                          :baseFacts  (loop for fact in (coerce ctx 'list) do 
                                            (append (get-triplet fact))))))
-             (princ"resp disambiguate :" )
-             (princ response)
-             (values (roslisp:msg-slot-value response :ambiguous) (roslisp:msg-slot-value response :sparqlResult))))
+             (princ"resp disambiguate :")
+             (princ response)))
+             ;;(values (roslisp:msg-slot-value response :ambiguous) (roslisp:msg-slot-value response :sparqlResult))))
        
     (roslisp::ros-rpc-error () 
      (princ "Service call failed:") (princ *disambgiuate-srv*)))) 
