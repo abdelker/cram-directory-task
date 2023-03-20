@@ -5,8 +5,8 @@
 (defvar *understand-srv* nil "ROS service to understand")
 (defvar *merge-srv* nil "ROS service to merge")
 (defvar *sparql-srv* nil "ROS service to sparql")
-(defvar *mementar-sub* nil "ROS sub")
-
+;; (defvar *mementar-sub* nil "ROS sub")
+;;(defvar *mementar-cb-value* (make-fluent :name :mementar-cb-value) "")
 
 (defun init-ros-dt ()
 
@@ -14,16 +14,22 @@
   (setf *understand-srv* "/KSP/understand")
   (setf *merge-srv* "/KSP/merge")
   (setf *sparql-srv* "/ontologenius/sparql/pepper")
-  (setf *verbalize-srv* "/KSP/verbalize")
-  ;; (setf *mementar-sub* (subscribe (concatenate 'string "/mementar/occasions/" robot-name) "std_msgs/String"
-  ;;     
-)
+  (setf *verbalize-srv* "/KSP/verbalize"))
+ ;; (setf *mementar-sub* (subscribe (concatenate 'string "/mementar/occasions/" *robot-name*) "mementar/MementarOccasion"  #'mementar-cb))     
 
+
+;; (defun mementar-cb (msg)
+;;   "Callback for mementar. Called by the mementar topic subscriber."
+;;   (cond ((eql (roslisp:msg-slot-value msg :id) id-mementar-callback) 
+;;     (progn 
+;;       (setf *cube* )))
+;;   msg))
 
 ;;verbalize
 (defun call-verbalize-srv (sparql)
   (call-service *verbalize-srv* 'knowledge_sharing_planner_msgs-srv:Verbalization :sparqlQuery
                 sparql))
+
 ;;sparql_ontology
 (defun call-sparql-srv (merge-sparql)
   "Function to call the sparql-srv service."
@@ -68,20 +74,60 @@
                        sentence)))
 
 
-
 (defun create-symbol-table (match)
   (roslisp:make-msg "ontologenius/OntologeniusSparqlResponse"
-                    :names (slot-value match 'ONTOLOGENIUS-MSG:NAMES):values
-                    (slot-value match 'ONTOLOGENIUS-MSG:VALUES)))
+                    :names (msg-slot-value match 'ONTOLOGENIUS-MSG:NAMES):values
+                    (msg-slot-value match 'ONTOLOGENIUS-MSG:VALUES)))
 
 
 (defun call-disambiguate-srv (match ctx)
-  "Function to call the SetChestColor service."
-  (call-service *disambiguate-srv*
-                'knowledge_sharing_planner_msgs-srv:Disambiguation :ontology
-                "pepper"
-                :symbol_table (create-symbol-table match):individual
-                (svref (slot-value match 'ONTOLOGENIUS-MSG:VALUES)
-                       0)
-                ;;   (loop for n in (coerce match 'list) do (princ n) (return n))
-                )) 
+  "Function to call the Disambgiuate service."
+  (handler-case
+    (progn
+       (let  ((response (call-service *disambiguate-srv*
+                         'knowledge_sharing_planner_msgs-srv:Disambiguation 
+                         :ontology *robot-name*
+                         :symbol_table (create-symbol-table match)
+                         :individual(svref (msg-slot-value match 'ONTOLOGENIUS-MSG:VALUES) 0)
+                         :baseFacts  (loop for fact in ctx do 
+                                           (append (get-triplet fact))))))
+             (princ (concatenate 'string "resp disambiguate :" response))
+             (values (roslisp:msg-slot-value response :ambiguous) (roslisp:msg-slot-value response :sparqlResult))))
+       
+    (roslisp::ros-rpc-error () 
+     (princ (concatenate 'string "Service call failed:" *disambgiuate-srv*))))) 
+
+;; (defun call-disambiguate-cube-srv (cube)
+;;   "Function to call the DisamibguateCube service."
+
+;;    (handler-case 
+;;         (progn
+;;           (call-service *disambiguate-srv*
+;;                 'knowledge_sharing_planner_msgs-srv:Disambiguation :ontology
+;;                 "pepper"
+;;                 (:symbol_table individuals) cube
+;;                 (:symbol_table symbols) "0"
+;;                 :individual cube
+;;                 )
+                
+;;             (let
+;;                 ((response (call-client-srv action param)))
+;;                 (let ((response-code (roslisp:msg-slot-value response :code)))
+                
+;;                 (eql response-code 0))))
+
+;;         (roslisp::ros-rpc-error () 
+;;             (cond
+;;                 ((eql *verbose* t)
+;;                     (let ((error-message (concatenate 'string "Failure to call ontologenius/" *name* )))
+;;                             (print error-message)))
+
+;;                 ((setf *client-srv* (concatenate 'string "ontologenius/" *name* ))))
+;;   (call-service *disambiguate-srv*
+;;                 'knowledge_sharing_planner_msgs-srv:Disambiguation :ontology
+;;                 "pepper"
+;;                 :symbol_table (create-symbol-table match):individual
+;;                 (svref (msg-slot-value match 'ONTOLOGENIUS-MSG:VALUES)
+;;                        0)
+;;                 ;;   (loop for n in (coerce match 'list) do (princ n) (return n))
+;;                 )) 
