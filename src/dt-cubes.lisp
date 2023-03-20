@@ -98,13 +98,15 @@
 
 (defun get-triplet (fact)
     (let ((match (split-sequence:SPLIT-SEQUENCE #\Space fact)))
-       (let ((triples (roslisp:make-msg "knowledge_sharing_planner_msgs/Triplet"
-                     :from (car match)
-                     :relation (second match)
-                     :on (last match))))
+       (let ((triplet (roslisp:make-msg "knowledge_sharing_planner_msgs/Triplet"
+                       :from (car match)
+                       :relation (second match)
+                       :on (car (last match)))))
                     
-         (princ (concatenate 'string "triplet :" triples))
-         (values triples))))
+        (princ "triplet :")
+        (princ triplet)
+        (values triplet))))
+         
 
 
 ; (defun update-cube-list ()
@@ -132,12 +134,12 @@
 (defun set-ontology ()
     (cond 
        ((eql cheat t)
-            (progn
-                (setf onto (onto::get-onto *robot-name*))
-                (setf onto (onto::set-lang lang)))))
-       (progn
-            (setf onto (onto::get-onto "human_0"))
-            (setf onto (onto::set-lang lang))))
+        (progn
+            (setf onto (onto::get-onto *robot-name*))
+            (setf onto (onto::set-lang lang)))))
+    (progn
+         (setf onto (onto::get-onto "human_0"))
+         (setf onto (onto::set-lang lang))))
 
 ; (defun change-context ()
 ;     (princ "--> Change ctx")
