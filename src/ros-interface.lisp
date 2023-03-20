@@ -89,7 +89,7 @@
                          :ontology *robot-name*
                          :symbol_table (create-symbol-table match)
                          :individual(svref (msg-slot-value match 'ONTOLOGENIUS-MSG:VALUES) 0)
-                         :baseFacts  (loop for fact in ctx do 
+                         :baseFacts  (loop for fact in (coerce ctx 'list) do 
                                            (append (get-triplet fact))))))
              (princ (concatenate 'string "resp disambiguate :" response))
              (values (roslisp:msg-slot-value response :ambiguous) (roslisp:msg-slot-value response :sparqlResult))))
