@@ -11,9 +11,9 @@
   ;;((not ctx-designate)
   (setq ctx-designate (vector (format nil "?0 isAbove ~a" table1)
                               "?0 isInContainer ?1"
-                              "?1 isA VisibleDtBox")
+                              "?1 isA VisibleDtBox"))
         ;;  ))
-        )
+        
   (setq response-merge-srv (call-merge-srv sparql ctx-designate nil))
   (setq merge-sparql (slot-value response-merge-srv 'KNOWLEDGE_SHARING_PLANNER_MSGS-SRV:MERGED_QUERY))
   (setq response-sparql-srv (call-sparql-srv merge-sparql))
@@ -82,19 +82,53 @@
       (princ result)
       (terpri)
       (setq state nil)
-      (values state result action)))))))
+      (values state result action)))))
 
 (defun set-ontology ()
-(cond 
+
+ (cond 
+   ((eq cheat t)
+    (progn
+      (setf onto (onto::get-onto robot-name))
+      (setf onto (onto::set-lang lang))))
+  
+  
+   (progn
+     (setf onto (onto::get-onto "human_0"))
+     (setf onto (onto::set-lang lang)))))
+
+(defun change-context ()
+
+ (princ "--> Change ctx")
+ (setf cheat (not cheat))
+ (princ (concatenate 'string "cheat :" cheat))
+ (set-ontology)
+ (update-cube-list))
+
+(defun update-cube-list ()
+
+ (cond 
   ((eq cheat t)
-  (progn
-    (setf onto onto::get-onto robot-name)
-    (setf onto onto::set-lang lang)
-  )
-  )
-  (progn
-    (setf onto onto::get-onto "human_0")
-    (setf onto onto::set-lang lang)
-  )
+   (progn 
+    (setf cubes (onto::get-from "isAbove" table1 "Cube")) 
+    (princ (concatenate 'string "list cubes :" cubes))
+    (setf cubes nil)
+    (loop for cube in cubes do
+     (setf boxes (onto::get-from "containerHasIn" cube "VisibleDtBox"))
+     (princ boxes)
+     (if (> (length boxes) 0)
+      (append cubes cube)))))
+
+  (setf cubes onto::get-from "isAbove" table1 "Cube"))
+  (setf nb-cubes (length cubes)))
+  
+(defun reset ()
 )
-)
+  
+ 
+ 
+ 
+
+
+
+
