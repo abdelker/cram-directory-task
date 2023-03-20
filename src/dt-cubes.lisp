@@ -102,8 +102,9 @@
                        :from (car match)
                        :relation (second match)
                        :on (car (last match)))))
-                    
+        (terpri)            
         (princ "triplet :")
+        (terpri)
         (princ triplet)
         (values triplet))))
          

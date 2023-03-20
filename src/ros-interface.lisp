@@ -91,11 +91,12 @@
                          :individual(svref (msg-slot-value match 'ONTOLOGENIUS-MSG:VALUES) 0)
                          :baseFacts  (loop for fact in (coerce ctx 'list) do 
                                            (append (get-triplet fact))))))
-             (princ (concatenate 'string "resp disambiguate :" response))
+             (princ"resp disambiguate :" )
+             (princ response)
              (values (roslisp:msg-slot-value response :ambiguous) (roslisp:msg-slot-value response :sparqlResult))))
        
     (roslisp::ros-rpc-error () 
-     (princ (concatenate 'string "Service call failed:" *disambgiuate-srv*))))) 
+     (princ "Service call failed:") (princ *disambgiuate-srv*)))) 
 
 ;; (defun call-disambiguate-cube-srv (cube)
 ;;   "Function to call the DisamibguateCube service."
