@@ -26,17 +26,30 @@
 
 
 (defun set-object-properties(facts entity)
- (setf object-of-interest (desig:an object (type cube)))
+ (setf object-of-interest (desig:an object))
  (loop for fact in 
              (coerce facts 'list) do
                  (let ((from (get-from fact)))
-                      (cond ((string= from entity)
+                      (cond ((string= from entity) 
                              (progn
-                              (setf object-property (get-relation fact)) (setf property-value  (get-on fact))
-                              (let ((?obj-prop (parse-keyword object-property)) (?prop-val (parse-keyword property-value)))
-                               (setf object-of-interest (extend-designator-properties object-of-interest 
-                                                         (list (list ?obj-prop ?prop-val)))))))))))
+                              (setf object-property (get-relation fact)) (setf property-value (get-on fact))
+                              (cond ((string= object-property "isA")
+                                     (set-typ property-value))
+                                    ((not (string= object-property "isA"))
+                                     (setf object-of-interest (extend-designator-properties object-of-interest 
+                                                               (list (get-object-properties-and-values object-property property-value)))))))))))
+ (values object-of-interest))
 
 (defun parse-keyword (string)
   (intern (string-upcase (string-left-trim ":" string)) :keyword))
 
+(defun is-a-variable (var))
+
+(defun set-typ (property-value)
+ (let ((?type (parse-keyword property-value)))
+      (setf object-of-interest (desig:an object (type ?type))))
+ (values object-of-interest))
+
+(defun get-object-properties-and-values (object-property property-value)
+ (let ((?obj-prop (parse-keyword object-property)) (?prop-val (parse-keyword property-value)))
+  (values (list ?obj-prop ?prop-val))))
