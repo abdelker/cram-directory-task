@@ -25,11 +25,18 @@
                  (setq base-facts-triples (append base-facts-triples (list (get-triplet fact))))))
 
 
-(defun set-object-properties(fact)
- (setf object-property (get-relation fact)) (setf property-value  (get-on fact))
- (let ((?obj-prop (parse-keyword object-property)) (?prop-val (parse-keyword property-value)))
-  (setf object-of-interest (desig:an object (type cube)
-                            (?obj-prop ?prop-val)))))
+(defun set-object-properties(facts entity)
+ (setf object-of-interest (desig:an object (type cube)))
+ (loop for fact in 
+             (coerce facts 'list) do
+                 (let ((from (get-from fact)))
+                      (cond ((string= from entity)
+                             (progn
+                              (setf object-property (get-relation fact)) (setf property-value  (get-on fact))
+                              (let ((?obj-prop (parse-keyword object-property)) (?prop-val (parse-keyword property-value)))
+                               (setf object-of-interest (extend-designator-properties object-of-interest 
+                                                         (list (list ?obj-prop ?prop-val)))))))))))
 
 (defun parse-keyword (string)
   (intern (string-upcase (string-left-trim ":" string)) :keyword))
+
