@@ -27,7 +27,9 @@
 
 (defun set-object-properties(fact)
  (setf object-property (get-relation fact)) (setf property-value  (get-on fact))
- (let ((?obj-prop (string-upcase object-property)) (?prop-val (string-upcase property-value)))
+ (let ((?obj-prop (parse-keyword object-property)) (?prop-val (parse-keyword property-value)))
   (setf object-of-interest (desig:an object (type cube)
                             (?obj-prop ?prop-val)))))
 
+(defun parse-keyword (string)
+  (intern (string-upcase (string-left-trim ":" string)) :keyword))
