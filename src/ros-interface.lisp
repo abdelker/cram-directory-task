@@ -53,17 +53,24 @@
 ;;merge
 (defun call-merge-srv (query ctx partial)
   "Function to call the KSP-merge service."
-  (write-line "Waiting for KSP merge")
-  (write-line (format nil "query: ~a ctx: ~a" query ctx))
-  (write-line "merge response: ")
+  (princ "Waiting for KSP merge")
+  (terpri)
+  (princ (format nil "query: ~a" query))
+  (terpri)
+  (princ (format nil "ctx: ~a" ctx))
+  (terpri)
+  (princ "merge response: ")
+  (terpri)
   (princ (call-service *merge-srv* 'knowledge_sharing_planner_msgs-srv:Merge :base_query
                        query :context_query ctx
                        :partial partial)))
 
 (defun call-understand-srv (sentence)
   "Function to call the KSP-understand service."
-  (write-line "Waiting for KSP Understand")
-  (write-line "understand response: ")
+  (princ "Waiting for KSP Understand")
+  (terpri)
+  (princ "understand response: ")
+  (terpri)
   (princ (call-service *understand-srv* 'knowledge_sharing_planner_msgs-srv:Understand :verbalization
                        sentence)))
 
@@ -86,10 +93,61 @@
                          :individual(svref (msg-slot-value match 'ONTOLOGENIUS-MSG:VALUES) 0)
                          :baseFacts base-facts-triple)))
              (setq base-facts-triple nil)
-             (write-line "resp disambiguate :")
-             (princ response) (terpri)))  
+             (princ "resp disambiguate :")
+             (princ response)))  
 
     (roslisp::ros-rpc-error () 
-     (write-line "Service call failed:") (write-line *disambgiuate-srv*)))) 
+     (princ "Service call failed:") (princ *disambgiuate-srv*)))) 
 
-;
+; (defun call-disambiguate-srv (match ctx)
+;   "Function to call the Disambgiuate service."
+;   (handler-case
+;     (progn
+;        (let  ((response (call-service *disambiguate-srv*
+;                          'knowledge_sharing_planner_msgs-srv:Disambiguation 
+;                          :ontology *robot-name*
+;                          :symbol_table (create-symbol-table match)
+;                          :individual(svref (msg-slot-value match 'ONTOLOGENIUS-MSG:VALUES) 0)
+;                          :baseFacts  (loop for fact in (coerce ctx 'list) do 
+;                                            (append (get-triplet fact))))))
+;              (princ "resp disambiguate :")
+;              (princ response)))
+;              ;;(values (roslisp:msg-slot-value response :ambiguous) (roslisp:msg-slot-value response :sparqlResult))))
+       
+;     (roslisp::ros-rpc-error () 
+    ; (princ "Service call failed:") (princ *disambgiuate-srv*)))) 
+
+;; (defun call-disambiguate-cube-srv (cube)
+;;   "Function to call the DisamibguateCube service."
+
+;;    (handler-case 
+;;         (progn
+;;           (call-service *disambiguate-srv*
+;;                 'knowledge_sharing_planner_msgs-srv:Disambiguation :ontology
+;;                 "pepper"
+;;                 (:symbol_table individuals) cube
+;;                 (:symbol_table symbols) "0"
+;;                 :individual cube
+;;                 )
+                
+;;             (let
+;;                 ((response (call-client-srv action param)))
+;;                 (let ((response-code (roslisp:msg-slot-value response :code)))
+                
+;;                 (eql response-code 0))))
+
+;;         (roslisp::ros-rpc-error () 
+;;             (cond
+;;                 ((eql *verbose* t)
+;;                     (let ((error-message (concatenate 'string "Failure to call ontologenius/" *name* )))
+;;                             (print error-message)))
+
+;;                 ((setf *client-srv* (concatenate 'string "ontologenius/" *name* ))))
+;;   (call-service *disambiguate-srv*
+;;                 'knowledge_sharing_planner_msgs-srv:Disambiguation :ontology
+;;                 "pepper"
+;;                 :symbol_table (create-symbol-table match):individual
+;;                 (svref (msg-slot-value match 'ONTOLOGENIUS-MSG:VALUES)
+;;                        0)
+;;                 ;;   (loop for n in (coerce match 'list) do (princ n) (return n))
+;;                 )) 
