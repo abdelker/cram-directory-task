@@ -1,5 +1,6 @@
-(defvar *agent1-desig* nil)
+(in-package :dt)
 
+(defvar *agent1-desig* nil)
 
 (defun define-agent-desig (agent-name)
  (let ((agent-role (svref (onto::get-on agent-name "hasRole" agent-name) 0)))
