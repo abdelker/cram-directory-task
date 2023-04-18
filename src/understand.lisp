@@ -6,117 +6,156 @@
 (defparameter object-of-interest nil)
 (defparameter *communicated-action* nil)
 (defparameter *communicated-object* nil)
+(defparameter *communicated-sparql-query* nil)
 (defvar type-set nil)
+(defvar *question* "")
 
-;;understand message and return communcated action, object and context
-(defun understand (message)
- (setf object-of-interest nil)
+
+
+;;understand service
+
+; (defun understand-call (message)
+;  "Call the KSP understand service"
+;  (call-get-srv message))
+
+(defun get-sparql-query (message)
+ (msg-slot-value (understand-call message) :SPARQLQUERY))
+
+(defun get-action (message)
+ (msg-slot-value (understand-call message) :ACTION))
+
+ ;;merge service 
+
+; (defun merge-query-call (message)
+;  "Call the KSP merge service"
+;  (call-merge-srv (get-sparql-query message) (get-context) nil))
+
+(defun merge-query-call (query context partial)
+ "Call the KSP merge service"
+ ;;(let ((merge-query-response (call-merge-srv query context partial)))
+  (msg-slot-value (call-merge-srv query context partial) :MERGED_QUERY))
+
+; (defun get-merged-query (message)
+;  (msg-slot-value (merge-query-call message) :MERGED_QUERY))
+
+;;sparql service
+;;(defun sparql-call (query))
+
+(defun disambiguate-matches (matches merge-sparql)
+ (set-new-context merge-sparql)
+ (setf *question-part* nil)
+ (setf *question* "")
+ (let ((new-context merge-sparql))
+
+     (loop for match in (coerce matches 'list) do
+         (let ((dis-resp (disambiguate-call match new-context)))
+          (let ((sparql-result (nth 0 dis-resp)) (ambiguous (nth 1 dis-resp)))
+              (write-line (format nil "Sparql result: ~a" sparql-result))
+
+              (cond
+                  ((not (coerce ambiguous 'list))
+                   (setq *match-sparql* sparql-result))
+                  ((values "not understand")))
+              (write-line (format nil "sparql : ~a" *match-sparql*))   
+              (setq *match-sparql* (merge-query-call *match-sparql* new-context t))
+              (setq *question-part* (verbalization-call *match-sparql*))
+              (write-line  (format nil "Question part: ~a" *question-part*))))
+
+         (cond
+             ((string= *question* "")
+              (setq *question*  *question-part*))
+             ((setq *question*  (concatenate 'string *question* ", or, " *question-part*)))))
+     (let ((message (format nil "Do you mean: ~a?" *question*)))
+      (write-line message)
+      ;;(construct-me-interaction-designator message)
+      (values *question*))))
+ 
+ 
+(defun verbalization-call (query)
+ (msg-slot-value (call-verbalize-srv query) :VERBALIZATION))
+
+(defun check-sparql-matches (matches)
+  (cond
+             ((> (length matches) 1)
+              (progn
+                   (let ((message "I am not sure of what you are speaking about. ")) 
+                    (write-line message)
+                   ;; (construct-me-interaction-designator message)
+                    (multiple-value-list (values "multiple matches" message)))))
+
+             ((= (length matches) 1)
+              (progn
+                    (let ((message "I think I understand what you want. ")) 
+                     (write-line message)
+                     ;;(construct-me-interaction-designator message)
+                     (multiple-value-list (values "one match" message)))))
+            
+             ((progn
+                   (let ((message "I dont have knowledge about this. ")) 
+                    (write-line message)
+                    ;;(construct-me-interaction-designator message)
+                    (multiple-value-list (values "no match" message)))))))
+             
+ 
+; (defun check-sparql-matches (matches)
+;   (cond
+;              ((> (length matches) 1)
+;               (progn
+;                   (write-line "I am not sure of what you are speaking about. I need to disambiguate your input")
+;                   (values "multiple matches")))
+
+;              ((= (length matches) 1)
+;               (progn
+;                   (write-line "I think I understand what you want")
+;                   (values "one match")))
+            
+;              ((progn
+;                   (write-line "I dont have knowledge about this.")
+;                   (values "no match")))))
+            
+
+
+(defun sparql-matches-call (query)
+ (msg-slot-value (call-sparql-srv query) :RESULTS))
+
+
+
+(defun disambiguate-call (match query)
+  (let ((response-disambiguate-srv (call-disambiguate-srv match query)))
+       (let ((sparql-result (msg-slot-value response-disambiguate-srv :SPARQLRESULT))
+             (ambiguous (msg-slot-value response-disambiguate-srv :AMBIGUOUS)))
+        (multiple-value-list (values sparql-result ambiguous)))))
+
+; (defun understand-response (message) 
+;  (multiple-value-bind
+;   (sparql-query communicated-action)
+;   (understand-call message) 
+;   (list sparql-query communicated-action)))
+
+(defun disambiguate-response (match query) 
+ (multiple-value-bind
+  (sparql-result ambiguous)
+  (disambiguate-call match query) 
+  (list sparql-result ambiguous)))
+; (defun understand-response (message &optional (context nil)) 
+;  (multiple-value-bind
+;   (communicated-sparql-query communicated-action communicated-object)
+;   (understand-message message context) 
+;   (list communicated-sparql-query communicated-action communicated-object)))
+
+(defun understand-call (message)
  (let ((response-understand-srv (call-understand-srv message)))
-      (setq *communicated-action* (msg-slot-value response-understand-srv :ACTION))
-      (let ((sparql-query (msg-slot-value response-understand-srv :SPARQLQUERY)))
-       (setf *communicated-object* (set-object-properties sparql-query "?0"))
+
+  (let ((sparql-query (msg-slot-value response-understand-srv :SPARQLQUERY))
+        (communicated-action (msg-slot-value response-understand-srv :ACTION)))
         
-       (values sparql-query *communicated-action* *communicated-object*))))
+   (multiple-value-list (values sparql-query communicated-action)))))
 
-;;understand sentence with given context call merge service
-
-(defun understand-with-context (message)
- (setf *table* "table_lack")
- (setq *ctx-designate* (vector (format nil "?0 isAbove ~a" *table*)
-                             "?0 isInContainer ?1" "?1 isA VisibleDtBox"))
- (let ((response-understand-srv (understand message)))         
-    (let ((response-merge-srv (call-merge-srv (nth-value 0 response-understand-srv ) *ctx-designate* nil)))
-        (let ((merge-sparql (msg-slot-value response-merge-srv :MERGED_QUERY)))
-         (setf *communicated-object* (set-object-properties merge-sparql "?0"))
+; (defun understand-message (message &optional (context nil))
+;  (let ((response-understand-srv (understand-call message)))
+;   (setf *communicated-sparql-query* (msg-slot-value response-understand-srv :SPARQLQUERY))
+;   (setf *communicated-action* (msg-slot-value response-understand-srv :ACTION)))
+;  (setf *communicated-object* (get-object message "?0" context))
         
-         (values merge-sparql *communicated-action* *communicated-object*)))))
+;  (values *communicated-sparql-query* *communicated-action* *communicated-object*))
 
-; (defun designate-object (sparql-query)
-;  (desig:an object (type ?type) 
-;                   (:has-color ?has-color) 
-;                   (:has-graphic ?has-graphic)
-;                   (:has-graphic-color ?has-graphic-color)
-;                   (:has-border-color ?has-border-color))
-;  (loop for fact in 
-;              (coerce sparql-query 'list) do 
-;                  (setq base-facts-triples (append base-facts-triples (list (get-triplet fact))))))
-
-(defun find-action (communicated-action))
-
-
-
-; (defvar *object-designator* (desig:an object (type cube) (color blue) (has)))
-
-(defun make-cube-designator (?has-color ?has-graphic ?has-graphic-color ?has-border-color)
- (let ((object-desig 
-        (desig:an object (type :cube) 
-                         (:has-color ?has-color) 
-                         (:has-graphic ?has-graphic)
-                         (:has-graphic-color ?has-graphic-color)
-                         (:has-border-color ?has-border-color))))
-      (values object-desig)))
-      
-
-(defvar property-list nil)
-(defun get-object-designator-properties (object-designator) 
- (let ((type (desig:desig-prop-value object-designator :type))                                                              
-       (border-color (desig:desig-prop-value object-designator :has-border-color))                                                                   
-       (cube-color (desig:desig-prop-value object-designator :has-color))
-       (graphic (desig:desig-prop-value object-designator :has-graphic)) 
-       (graphic-color (desig:desig-prop-value object-designator :has-graphic-color)))
-      (setf property-list (list type border-color cube-color graphic graphic-color)))
- (values property-list))
-                                                                 
-(defun set-cube-name (object-designator)
- (let ((object-prop (get-object-designator-properties object-designator)))
-  (let ((tc (string-downcase (nth 0 object-prop)))
-        (bc (get-first-char-of-prop (nth 1 object-prop)))
-        (cc (get-first-char-of-prop (nth 2 object-prop)))
-        (g (get-first-char-of-prop (nth 3 object-prop)))
-        (gc (get-first-char-of-prop (nth 4 object-prop)))) 
-       (let ((cube-name (concatenate 'string tc "_" bc cc g gc)))
-        (values cube-name)))))
-                                                                   
- 
- 
- 
-(defun get-first-char-of-prop (property) 
-  (string-upcase (char property 0)))
- 
-
-
-(defun set-object-properties(facts entity)
- ;;(setf object-of-interest (desig:an object))
- (let ((facts-tmp facts))
-  (loop for fact in 
-              (coerce facts 'list) do
-                  (let ((from (get-from fact)))
-                       (cond ((string= from entity) 
-                              (progn
-                               (setf object-property (get-relation fact)) (setf property-value (get-on fact))
-                               (princ (format nil "current object property <<<~a>>> and its value <<<~a>>>" object-property property-value)) (terpri)
-                               (cond ((string= object-property "isA")
-                                      (setf type-set (set-typ property-value))
-                                      (princ (format nil "current object type <<<~a>>>" type-set))(terpri))
-                                     ((and (not (eql type-set nil)) (not (string= object-property "isA")) (not (string= (char property-value 0) "?")))
-                                      (setf object-of-interest (extend-designator-properties object-of-interest 
-                                                                (list (get-object-properties-and-values object-property property-value)))))                                  
-                                     ((and (not (eql type-set nil))  (not (string= object-property "isA")) (string= (char property-value 0) "?"))
-                                      (setf object-of-interest (extend-designator-properties object-of-interest 
-                                                                (list (list (parse-keyword object-property) (set-object-properties facts-tmp property-value)))))))))))))           
-                                                               
- (values object-of-interest))
-
-(defun parse-keyword (string)
-  (intern (string-upcase (string-left-trim ":" string)) :keyword))
-
-;;(defun is-a-variable (var))
-
-(defun set-typ (property-value)
- (let ((?type (parse-keyword property-value)))
-      (setf object-of-interest (desig:an object (type ?type))))
- (values object-of-interest))
-
-(defun get-object-properties-and-values (object-property property-value)
- (let ((?obj-prop (parse-keyword object-property)) (?prop-val (parse-keyword property-value)))
-  (values (list ?obj-prop ?prop-val))))
