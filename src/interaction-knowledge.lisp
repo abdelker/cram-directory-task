@@ -3,24 +3,51 @@
 (defparameter *you-interact-desig* nil)
 (defparameter *me-interact-desig* nil)
 
-(defun construct-you-interaction-designator (agent-name message)
- (let ((?from-agent-desig (construct-agent-desig agent-name)) 
-       (?from-msg-desig (construct-message-desig message)))
-   (setf *you-interact-desig*
-    (desig:an interaction (type :receiving) 
-                          (:from-agent ?from-agent-desig)
-                          (:with-content message) 
-                          (:from-msg ?from-msg-desig)))))
+(defvar *point-at-msg* "point at the blue cube with a circle")
 
-(defun construct-me-interaction-designator ()
- (cond ((eql *you-interact-desig* nil)
-        (write-line "There is nothing to reply to"))
-       ((progn 
-         (let ((?to-agent-desig (desig-prop-value *you-interact-desig* :from-agent)) 
-               (?to-msg-desig (desig-prop-value *you-interact-desig* :from-msg)))
-          (setf *me-interact-desig*
-           (desig:an interaction (type :replying) 
-                                 (:to ?to-agent-desig)
-                                 (:with-content message) 
-                                 (:to-msg ?to-msg-desig))))))))
-                          
+(defun construct-you-interaction-designator (agent-name message)
+ (let ((?message message)(result-msg (construct-message-desig message)) (?from-agent-desig (construct-you-agent-desig agent-name))) 
+      (let ((?from-msg-desig (nth 0 result-msg)) (reply-msg (nth 1 result-msg)) (reply-state (nth 2 result-msg)))
+       (setf *you-interact-desig*
+        (desig:an interaction (type :receiving) 
+                              (:from-agent ?from-agent-desig)
+                              (:with-content ?message) 
+                              (:from-msg ?from-msg-desig)))
+       (multiple-value-list (values *you-interact-desig* reply-msg reply-state)))))
+
+(defun construct-me-interaction-designator (message)
+ (let ((?message message))
+  (cond ((eql *you-interact-desig* nil)
+         (write-line "There is nothing to reply to"))
+        ((progn 
+          (let ((?to-agent-desig (desig-prop-value *you-interact-desig* :from-agent)) 
+                (?to-msg-desig (desig-prop-value *you-interact-desig* :from-msg)))
+           (setf *me-interact-desig*
+            (desig:an interaction (type :replying) 
+                                  (:to ?to-agent-desig)
+                                  (:with-content ?message) 
+                                  (:to-msg ?to-msg-desig)))))))))
+
+; (defun get-reply-msg-state (agent-name message)
+
+;    (let ((you-desig (construct-you-interaction-designator agent-name message)))
+;     (let ((reply-msg (nth 1 you-desig)) (reply-state (nth 2 you-desig))))
+
+(defun demo-conversation ()
+ (write-line "what is your agent name?")
+ (let ((agent-name (read)))
+  (write-line "what do you want?")
+  (let ((message (read)))
+   (let ((you-desig (construct-you-interaction-designator agent-name message)))
+    (let ((reply-msg (nth 1 you-desig)) (reply-state (nth 2 you-desig)))
+     (construct-me-interaction-designator reply-msg)
+     (cond ((eql reply-state nil)
+            (progn 
+             (write-line reply-msg)
+             (let ((reply (read)))
+              (let ((you-desig (construct-you-interaction-designator agent-name reply)))
+               (let ((reply-msg (nth 1 you-desig)) (reply-state (nth 2 you-desig)))
+                (construct-me-interaction-designator reply-msg))))))))))))
+            
+     
+                             
