@@ -2,7 +2,7 @@
 
 (defparameter *request-msg-desig* (desig:a message (type :request)))
 
-(defun define-message-desig (sentences)
+(defun construct-message-desig (sentences)
  (let ((u-resp (understand-call sentences)))
   (let ((query (nth 0 u-resp)) (?communicated-action (nth 1 u-resp)))
    (let ((?communicated-object (nth 2 (designate-object query))))
