@@ -5,7 +5,7 @@
 (defun define-message-desig (sentences)
  (let ((u-resp (understand-call sentences)))
   (let ((query (nth 0 u-resp)) (?communicated-action (nth 1 u-resp)))
-   (let ((?communicated-object (get-object query "?0")))
+   (let ((?communicated-object (nth 2 (designate-object query))))
     (setf *msg-desig*
      (desig:a message (type :request) 
                      (:communicated-action ?communicated-action) 
