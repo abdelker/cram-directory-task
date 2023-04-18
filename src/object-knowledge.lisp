@@ -13,27 +13,36 @@
  (let ((merge-sparql (merge-query-call query *ctx-designate* nil))) 
      (let ((matches (sparql-matches-call merge-sparql)))
      ;;check length of matches
-      (let ((check-matches (check-sparql-matches matches)))
+      (let ((check-results (check-sparql-matches matches)))
+      (let ((check-matches (nth 0 check-results)) (reply-msg (nth 1 check-results)))
          (cond
              ((string= check-matches "multiple matches")
               (progn
                   (let ((result (disambiguate-matches matches merge-sparql)))
-                   (multiple-value-list (values nil result nil)))))
+                  (let ((reply-msg (concatenate 'string reply-msg (format nil "Do you mean ~a?" result))))
+                   (multiple-value-list (values nil result nil reply-msg))))))
 
              ((string= check-matches "one match")
               (progn
-                  (let ((matched-object (get-object query "?0" *ctx-designate*)))
-                   (multiple-value-list (values t matches matched-object)))))
+                  (let ((matched-object (get-object query "?3" *ctx-designate*))) ;;entity changes when context is merged
+                   (multiple-value-list (values t matches matched-object reply-msg)))))
 
              ((progn
-                 (multiple-value-list (values nil "not understand" nil)))))))
-     ))
+                 (multiple-value-list (values nil "not understand" nil reply-msg)))))))
+     )))
 
+; (defun get-object (query entity &optional (context nil))
+; (write-line (format nil "the query is: ~a and the context is:~a" query context))
+;  (cond ((eql context nil)
+;         (set-object-properties query entity))
+;        ((set-object-properties (sort-query context) entity))))
 
 (defun get-object (query entity &optional (context nil))
+(let ((merged-query (merge-query-call query context nil)))
+ (write-line (format nil "the query is: ~a and the context is:~a and the merged query is:~a " query context merged-query))
  (cond ((eql context nil)
         (set-object-properties query entity))
-       ((set-object-properties (sort-query (merge-query-call query context nil)) entity))))
+       ((set-object-properties (sort-query merged-query) entity)))))
 
 (defun get-object-designator-properties (object-designator) 
  (let ((type (desig:desig-prop-value object-designator :type))                                                              
@@ -112,7 +121,7 @@
 
 
 (defun sort-query (query)
-  (coerce (adjoin "?0 isA Cube"  (remove "?0 isA Cube" (coerce query 'list) :test 'equal)) 'vector))  
+  (coerce (adjoin "?3 isA Cube"  (remove "?3 isA Cube" (coerce query 'list) :test 'equal)) 'vector))  ;;changed entity number to match query
 
 
 (defun make-cube-designator (?has-color ?has-graphic ?has-graphic-color ?has-border-color)
