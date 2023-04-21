@@ -78,7 +78,7 @@
   (cond
              ((> (length matches) 1)
               (progn
-                   (let ((message "I am not sure of what you are speaking about. ")) 
+                   (let ((message "I am not sure what you are speaking about. ")) 
                     (write-line message)
                    ;; (construct-me-interaction-designator message)
                     (multiple-value-list (values "multiple matches" message)))))
@@ -91,7 +91,7 @@
                      (multiple-value-list (values "one match" message)))))
             
              ((progn
-                   (let ((message "I dont have knowledge about this. ")) 
+                   (let ((message "I do not have knowledge about this. ")) 
                     (write-line message)
                     ;;(construct-me-interaction-designator message)
                     (multiple-value-list (values "no match" message)))))))
