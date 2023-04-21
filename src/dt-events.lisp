@@ -3,6 +3,7 @@
 (defparameter *count* 0)
 (defparameter *mvt-duration* 3)
 (defparameter *agent-state* "in-progress")
+(defparameter *agent-goal* "waitinghuman1")
 
                   
 ;;demo
@@ -29,79 +30,87 @@
 (defclass waiting-for-human1 (occasions-events:event) ())
 
 
-; (defclass looking-at-cube1 (occasions-events:event))
+(defclass looking-at-cube1 (occasions-events:event) ())
 
 
-; (defclass waiting-for-human2 (occasions-events:event))
+(defclass waiting-for-human2 (occasions-events:event) ())
 
 
-; (defclass looking-at-cube2 (occasions-events:event))
+(defclass looking-at-cube2 (occasions-events:event) ())
 
-; ;; event classes for cube takes
+;; event classes for cube takes
 
-; (defclass wrong-cube-take (occasions-events:event)
-;  ((no-cube-taken
-;    :init-arg :no-take :reader no-take
-;    :init-form nil)))
+(defclass wrong-cube-take (occasions-events:event)
+ ((no-cube-taken
+   :initarg :no-take 
+   :reader no-take
+   :initform nil)))
 
 
-; (defclass good-cube-take (occasions-events:event))
+(defclass good-cube-take (occasions-events:event) ())
 
 
 ;;event-handlers
 
 (defmethod occasions-events:on-event ((occasions-events:event monitor))
- (write-line "I am monitoring")
+ (write-line "I am monitoring the environment")
  (cond ((string= *agent-state* "in-progress")
         (setf *count* (+ *count* 1)))
        ((reset-goal))))
 
 
 (defmethod occasions-events:on-event ((occasions-events:event waiting-for-human1))
- (write-line "I am waiting")
+ (write-line "I am waiting now for human1")
  (cond ((>= *count* (+ *mvt-duration* 2))
         (progn 
                (setf *count* 0)
 ;;(perform lookobject)
-         (princ "still waiting for human")))))
-        ;; (occasions-events:on-event (make-instance 'looking-at-cube1))))))
+         (princ "looking now at cube1")
+         (occasions-events:on-event (make-instance 'looking-at-cube1))))))
 
 
-; (defmethod occasions-events:on-event ((occasions-events:event looking-at-cube1))
-;  (setf *count* 0)
-; ;;(perform lookobject)
-;  (occasions-events:on-event (make-instance 'waiting-for-human2)))
+(defmethod occasions-events:on-event ((occasions-events:event looking-at-cube1))
+ (write-line "I am looking now on cube1")
+ (cond ((>= *count* (+ *mvt-duration* 2))
+        (progn 
+               (setf *count* 0)
+;;(perform lookobject)
+         (occasions-events:on-event (make-instance 'waiting-for-human2))))))
 
 
-; (defmethod occasions-events:on-event ((occasions-events:event waiting-for-human2))
-;  (cond 
-;   ((eql *count* *mvt-duration*))
-;    ;(perform sayWaiting))
+(defmethod occasions-events:on-event ((occasions-events:event waiting-for-human2))
+ (write-line "I am waiting now for human1")
+ (cond 
+  ((eql *count* *mvt-duration*))
+   ;(perform sayWaiting))
    
-;   ((>= *count* (+ *mvt-duration* 2))
-;   ;; (perform lookObject)
-;    (occasions-events:on-event (make-instance 'looking-at-cube2)))))
+  ((>= *count* (+ *mvt-duration* 2))
+  ;; (perform lookObject)
+   (occasions-events:on-event (make-instance 'looking-at-cube2)))))
 
 
-; (defmethod occasions-events:on-event ((occasions-events:event looking-at-cube2))
-;  (setf *count* 0)
-; ;;(perform lookobject)
-;  (occasions-events:on-event (make-instance 'wrong-cube-take)))
+(defmethod occasions-events:on-event ((occasions-events:event looking-at-cube2))
+ (write-line "I am looking now on cube2")
+ (cond ((>= *count* (+ *mvt-duration* 2))
+        (progn 
+         (setf *count* 0)
+;;(perform lookobject)))
+         (occasions-events:on-event (make-instance 'wrong-cube-take :no-take t))))))
 
 
 ; ;; event-handlers for cube takes
 
-; (defmethod occasions-events:on-event ((occasions-events:event wrong-cube-take))
-; ;;(perform lookAt)
-;  (cond 
-;   ((eql (no-take event) t))))
-;    ;(perfom sayNoCubeTake))
+(defmethod occasions-events:on-event ((occasions-events:event wrong-cube-take))
+;;(perform lookAt)
+ (cond 
+  ((eql (no-take event) t))))
+   ;(perfom sayNoCubeTake))
    
-;    ;(perform sayWaiting))
+   ;(perform sayWaiting))
    
-;  ;; ((perform sayWrongCubeTake))
-;   ;; (perform lookObject)
-;   ;; (perform lookExperimentator)
-;   ;; (perform pointAt)
-; ;;   (perform sayhelp)
-;   ;; (occasions-events:on-event (make-instance 'looking-at-cube2)))))
+ ;; ((perform sayWrongCubeTake))
+  ;; (perform lookObject)
+  ;; (perform lookExperimentator)
+  ;; (perform pointAt)
+;;   (perform sayhelp)
+  ;; (occasions-events:on-event (make-instance 'looking-at-cube2)))))
