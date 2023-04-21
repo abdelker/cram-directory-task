@@ -19,7 +19,10 @@
 
 ;; event classes for cube takes
 
-(defclass wrong-cube-take (event))
+(defclass wrong-cube-take (event)
+ ((no-cube-taken
+   :init-arg :no-take :reader no-take
+   :init-form nil)))
 
 (defclass good-cube-take (event))
 
