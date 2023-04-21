@@ -6,12 +6,15 @@
 
 ;;demo
 
+
+
+
 (defun init-dt-demo ()
 
 ;;set goal/event to WaitingHuman1
 
  (on-event (make-instance 'waiting-for-human1))
- (roslisp:loop-at-most-every 1  (on-event (make-array 'monitor))))
+ (roslisp:loop-at-most-every 1  (on-event (make-instance 'monitor))))
 
 
 (defun reset-goal ()
