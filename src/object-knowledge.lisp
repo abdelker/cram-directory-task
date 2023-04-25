@@ -4,7 +4,7 @@
 
 (defvar property-list nil)
 
-(defparameter *table* "table_1")                              
+(defparameter *table* "table_lack")                              
 (defparameter *ctx-designate* (vector (format nil "?0 isAbove ~a" *table*)
                                "?0 isInContainer ?1" "?1 isA VisibleDtBox"))
 (defparameter *partial* nil)
@@ -115,7 +115,7 @@
 
 
 ; (defun get-context()
-;  (setf *table* "table_1")
+;  (setf *table* "table_lack")
 ;  (setq *ctx-designate* (vector (format nil "?0 isAbove ~a" *table*)
 ;                              "?0 isInContainer ?1" "?1 isA VisibleDtBox")))
 

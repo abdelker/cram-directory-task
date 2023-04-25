@@ -1,3 +1,5 @@
 
 .vscode/
 src/notes
+src/dt-cubes copy.lisp
+src/tmp
